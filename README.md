@@ -73,6 +73,37 @@ Developer pushed a patch to production the same day including:
 | 2026-03-27 05:00 | Developer confirmed findings |
 | 2026-03-27 ~09:00 | Patch deployed to production |
 
+## Patch Retest (2026-03-27, evening)
+
+Developer pushed NFKC normalization + zero-width stripping. Retested all vectors.
+
+### Now caught (patched):
+| Technique | Status |
+|---|---|
+| Zero-width spaces | **FIXED** |
+| Combining diacritics | **FIXED** |
+| Fullwidth characters | **FIXED** (NFKC) |
+| Mathematical bold/italic | **FIXED** (NFKC) |
+| Superscript characters | **FIXED** (NFKC) |
+| Roman numeral characters | **FIXED** (NFKC) |
+
+### Still bypassing:
+| Technique | Status |
+|---|---|
+| Cyrillic homoglyphs (а, о) | **STILL BYPASSES** |
+| Greek homoglyphs (ο) | **STILL BYPASSES** |
+| Mixed Latin+Devanagari | **STILL BYPASSES** |
+
+### Root cause of remaining bypasses
+
+NFKC normalization handles stylistic variants (fullwidth, superscript, math symbols) but does not map cross-script homoglyphs. Cyrillic а (U+0430) and Latin a (U+0061) are different codepoints that are visually identical. NFKC treats them as correct in their respective scripts.
+
+### Recommended fix
+
+Unicode TR39 confusables mapping. The Unicode Consortium publishes `confusables.txt` which maps all visually similar characters across scripts to a common skeleton. Apply the skeleton algorithm before language detection.
+
+Python: `confusable_homoglyphs` library or ICU skeleton function.
+
 ## Acknowledgment
 
 Listed on [raiplus.in/hall-of-fame](https://raiplus.in/hall-of-fame)
