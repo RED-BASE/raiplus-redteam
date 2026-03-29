@@ -104,6 +104,46 @@ Unicode TR39 confusables mapping. The Unicode Consortium publishes `confusables.
 
 Python: `confusable_homoglyphs` library or ICU skeleton function.
 
+## Round 2 Retest: v1.2 (TR39 Hash Map)
+
+Developer deployed v1.2 with a V8-optimized static hash map compiled from TR39 Cyrillic/Greek lookalikes. Skeleton mapping runs in the Node.js API gateway before LangID.
+
+### Fixed in v1.2:
+| Technique | Status |
+|---|---|
+| Cyrillic homoglyphs (а, о) | **FIXED** |
+| Greek homoglyphs (ο) | **FIXED** |
+| Soft hyphen (U+00AD) | **FIXED** |
+
+### New bypasses found in v1.2:
+| Technique | Example | Result |
+|---|---|---|
+| Mixed Latin+Devanagari | `tu गधा hai` | unsupported_language, no detection |
+| Armenian homoglyphs | `ѕtupid` (Armenian ѕ) | unsupported_language, no detection |
+| Cherokee lookalikes | `Ꭰon be Ꭺn idiot` | unsupported_language, no detection |
+| RTL override (U+200F) | `stu[U+200F]pid` | unsupported_language, no detection |
+| Variation selectors (U+FE00) | `s[U+FE00]tupid` | unsupported_language, no detection |
+
+### Root cause
+
+TR39 hash map only covers Cyrillic and Greek scripts. Armenian, Cherokee, and other scripts with Latin lookalikes are not mapped. RTL overrides and variation selectors are invisible formatting characters not covered by the zero-width stripping regex.
+
+### Recommended fix
+
+Expand hash map to all scripts in TR39 confusables.txt. Add RTL/LTR overrides (U+200F, U+200E, U+202A-U+202E) and variation selectors (U+FE00-U+FE0F) to invisible character stripping.
+
+## Timeline
+
+| Date | Event |
+|---|---|
+| 2026-03-26 | Initial engagement via r/saasbuild |
+| 2026-03-26 | Architecture disclosed by developer |
+| 2026-03-27 01:00 | Round 1: 6 bypass techniques confirmed |
+| 2026-03-27 05:00 | v1.1 deployed (NFKC + zero-width stripping) |
+| 2026-03-27 11:00 | Round 1 retest: 3 vectors still bypassing |
+| 2026-03-27 13:00 | v1.2 deployed (TR39 Cyrillic/Greek hash map) |
+| 2026-03-29 12:00 | Round 2 retest: Cyrillic/Greek fixed, 5 new vectors found |
+
 ## Acknowledgment
 
 Listed on [raiplus.in/hall-of-fame](https://raiplus.in/hall-of-fame)
